@@ -6,49 +6,52 @@ from tempfile import NamedTemporaryFile
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
-from pprint import pprint
 
 from word_search_solver import WordSearchPuzzle
 
 word_search_list = [
-    "abcdefghijklm;nopqrstuvwxyz", "\n", "eazy,welcome,aan", "diagonal vertical horizontal",
-    "golfpijp", " keuken", "nifty ", " level ", "program", "ook", "oma", "foto", "python",
-    "hot", "oogbal", "yahoo", "netjes", "hoog", "koen", "nothing", "debug", "vet",
-    "mensen", "bier", "neef", "set", "weg", "google", "zero"]
+    'abcdefghijklm;nopqrstuvwxyz', '\n', 'eazy,welcome,aan', 'diagonal vertical horizontal',
+    'golfpijp', ' keuken', 'nifty ', ' level ', 'program', 'ook', 'oma', 'foto', 'python',
+    'hot', 'oogbal', 'yahoo', 'netjes', 'hoog', 'koen', 'nothing', 'debug', 'vet',
+    'mensen', 'bier', 'neef', 'set', 'weg', 'google', 'zero']
 
-puzzle_file = """abcdefghijklm+
-qhorizontalaan
-bierxazghrycko
-wegiocgolfpijp
-jgoogleotestmq
-programtowgror
-yahooiiomayews
-tqazwsxfpolvet
-hkedclekuekcxu
-oogbaledvlelev
-netjesbehtjoew
-dnesnemafpaczx
-lkjemnbuonifty
--nothingfeorez
-"""
+# triple quote multi lines create a larger size when written to a file in Windows OS
+puzzle_file = ('abcdefghijklm+\n'
+               'qhorizontalaan\n'
+               'bierxazghrycko\n'
+               'wegiocgolfpijp\n'
+               'jgoogleotestmq\n'
+               'programtowgror\n'
+               'yahooiiomayews\n'
+               'tqazwsxfpolvet\n'
+               'hkedclekuekcxu\n'
+               'oogbaledvlelev\n'
+               'netjesbehtjoew\n'
+               'dnesnemafpaczx\n'
+               'lkjemnbuonifty\n'
+               '-nothingfeorez')
 
 class WordSearchPuzzleTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with NamedTemporaryFile(mode="w", delete=False) as temp_word_puzzle:
+        # create a temporary file to test against
+        with NamedTemporaryFile(mode='w', delete=False) as temp_word_puzzle:
             temp_word_puzzle.writelines(puzzle_file)
             cls.word_puzzle = temp_word_puzzle.name
 
-        with NamedTemporaryFile(mode="w", delete=False) as temp_word_search_list:
+        # create a temporary file to test against
+        with NamedTemporaryFile(mode='w', delete=False) as temp_word_search_list:
             for line in word_search_list:
                 temp_word_search_list.write(line if line.endswith('\n') else line + '\n')
             cls.word_search_list = temp_word_search_list.name
 
+        # initiate the class for the whole test
         cls.ws = WordSearchPuzzle(cls.word_puzzle, cls.word_search_list)
 
     @classmethod
     def tearDownClass(cls):
+        # try to remove the files created in the setUpClass
         try: os.unlink(cls.word_puzzle)
         except: pass
         try: os.unlink(cls.word_search_list)
@@ -58,7 +61,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid file path is given
         with self.assertRaises(AssertionError):
-            self.ws._get_puzzle_size("/not/a/path.txt")
+            self.ws._get_puzzle_size('/not/a/path.txt')
 
         # Return a tuple
         result = self.ws._get_puzzle_size(self.word_puzzle)  # -> (14, 14)
@@ -72,7 +75,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid file path is given
         with self.assertRaises(AssertionError):
-            self.ws._create_empty_dataframe("/not/a/path.txt")
+            self.ws._create_empty_dataframe('/not/a/path.txt')
 
         # create a DataFrame
         result = self.ws._create_empty_dataframe(self.word_puzzle)
@@ -86,13 +89,13 @@ class WordSearchPuzzleTest(unittest.TestCase):
         for index, row in result.iterrows():
             for cell in row:
                 # every cell should contain a space character
-                self.assertEqual(cell, chr(32), "DataFrame cell should contain a 'space' character")
+                self.assertEqual(cell, chr(32), 'DataFrame cell should contain a "space" character')
 
     def test_create_puzzle_dataframe(self):
 
         # should get an error when an invalid file path is given
         with self.assertRaises(AssertionError):
-            self.ws._get_puzzle_size("/not/a/path.txt")
+            self.ws._get_puzzle_size('/not/a/path.txt')
 
         # create a DataFrame
         result = self.ws._create_puzzle_dataframe(self.word_puzzle)
@@ -116,7 +119,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid object is given
         with self.assertRaises(AssertionError):
-            self.ws._create_position_dataframe("puzzle_df")
+            self.ws._create_position_dataframe('puzzle_df')
 
         # create a DataFrame
         result = self.ws._create_position_dataframe(self.ws.puzzle_df)
@@ -143,7 +146,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid file path is given
         with self.assertRaises(AssertionError):
-            self.ws.create_word_set("/not/a/path.txt")
+            self.ws.create_word_set('/not/a/path.txt')
 
         # create a set
         result = self.ws.create_word_set(self.word_search_list)
@@ -155,18 +158,18 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertGreater(len(result), len(word_search_list))
         self.assertEqual(33, len(result))
 
-    def test_get_turned_dataframe(self):
+    def test_get_turned_DataFrame(self):
 
-        # should get an error when an invalid type is given to dataframe
+        # should get an error when an invalid type is given to DataFrame
         with self.assertRaises(AssertionError):
-            self.ws.get_turned_dataframe(dataframe="dataframe", times=2)
+            self.ws.get_turned_dataframe(dataframe='dataframe', times=2)
 
         # should get an error when an invalid type is given to times
         with self.assertRaises(AssertionError):
-            self.ws.get_turned_dataframe(dataframe=pd.DataFrame, times="2")
+            self.ws.get_turned_dataframe(dataframe=pd.DataFrame, times='2')
 
         # get data to test
-        # dataframe[column][row]
+        # DataFrame[column][row]
         dataframe = self.ws.puzzle_df.copy()
         top_right = dataframe[13][0]    # -> '+'
         bottom_left = dataframe[0][13]  # -> '-'
@@ -206,12 +209,12 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
     def test_get_diagonal_dataframe(self):
 
-        # should get an error when an invalid type is given to dataframe
+        # should get an error when an invalid type is given to DataFrame
         with self.assertRaises(AssertionError):
-            self.ws.get_diagonal_dataframe(dataframe="dataframe")
+            self.ws.get_diagonal_dataframe(dataframe='dataframe')
 
         # get data to test
-        # dataframe[column][row]
+        # DataFrame[column][row]
         dataframe = self.ws.puzzle_df.copy()
         top_right = dataframe[13][0]      # -> '+'
         top_left = dataframe[0][0]        # -> 'a'
@@ -264,7 +267,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid type is given to dataframe
         with self.assertRaises(AssertionError):
-            self.ws.get_all_posibilities(dataframe="dataframe")
+            self.ws.get_all_posibilities(dataframe='dataframe')
 
         dataframe = self.ws.puzzle_df.copy()
         result = self.ws.get_all_posibilities(dataframe=dataframe)
@@ -276,7 +279,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # 0deg, 90deg, 180deg, 270deg -> height 14
         # 45deg, 135deg, 225deg, 315deg - height 27 ( height + width - 1 )
-        # combined = 8 pieces of dataframe
+        # combined = 8 DataFrame's
         # 4 * 14(height) + 4 * 27 =  164
         # the total of rows of the result should be 164
         # the total of columns should be 14
@@ -284,7 +287,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertEqual(width, 14)    # total columns
         self.assertEqual(height, 164)  # total rows
 
-    def test_dataframe_pair(self):
+    def test_dataframe_letter_position_pair(self):
         dataframe = self.ws.puzzle_df.copy()
         positionframe = self.ws.position_df.copy()
 
@@ -326,7 +329,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
                 puzzle_letter = self.ws.puzzle_df[pos_x][pos_y]  # letter of position
                 self.assertIs(type(puzzle_letter), str)
                 self.assertEqual(letter, puzzle_letter)
-                # print(f"{letter} == {puzzle_letter} puzzle coordinates: {position}")
+                # print(f'{letter} == {puzzle_letter} puzzle coordinates: {position}')
 
 
 if __name__ == '__main__':
