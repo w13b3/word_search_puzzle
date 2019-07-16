@@ -21,7 +21,7 @@ puzzle_file = ('abcdefghijklm+\n'
                'bierxazghrycko\n'
                'wegiocgolfpijp\n'
                'jgoogleotestmq\n'
-               'programtowgror\n'
+               'programtnwgror\n'
                'yahooiiomayews\n'
                'tqazwsxfpolvet\n'
                'hkedclekuekcxu\n'
@@ -30,6 +30,7 @@ puzzle_file = ('abcdefghijklm+\n'
                'dnesnemafpaczx\n'
                'lkjemnbuonifty\n'
                '-nothingfeorez')
+
 
 class WordSearchPuzzleTest(unittest.TestCase):
 
@@ -288,6 +289,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertEqual(height, 164)  # total rows
 
     def test_dataframe_letter_position_pair(self):
+
         dataframe = self.ws.puzzle_df.copy()
         positionframe = self.ws.position_df.copy()
 
@@ -330,6 +332,57 @@ class WordSearchPuzzleTest(unittest.TestCase):
                 self.assertIs(type(puzzle_letter), str)
                 self.assertEqual(letter, puzzle_letter)
                 # print(f'{letter} == {puzzle_letter} puzzle coordinates: {position}')
+
+    def test_find_word_with_coordinates(self):
+
+        dataframe = self.ws.puzzle_df.copy()
+
+        # should get an error when an invalid type is given to DataFrame
+        with self.assertRaises(AssertionError):
+            self.ws.find_word_with_coordinates(dataframe='dataframe', coordinates=pd.Series())
+
+        # should get an error when an invalid type is given to coordinates
+        with self.assertRaises(AssertionError):
+            self.ws.find_word_with_coordinates(dataframe=pd.DataFrame(), coordinates='coordinates')
+
+        # should get an error when an invalid series of coordinates is given to coordinates
+        with self.assertRaises(AssertionError):
+            wrond_data = pd.Series(((0, 1), (2, 3), (4, 5, 6)))  # coordinates are not all of lenght: 2
+            self.ws.find_word_with_coordinates(dataframe=pd.DataFrame(), coordinates=wrond_data)
+
+        # should get an error when an invalid series of coordinates is given to coordinates
+        with self.assertRaises(AssertionError):
+            wrond_data = pd.Series(((1, ), (2, 3), (4, 5)))  # coordinates are not all of lenght: 2
+            self.ws.find_word_with_coordinates(dataframe=pd.DataFrame(), coordinates=wrond_data)
+
+        # should return None if the given value is out of range of the puzzle DataFrame
+        diagonal = pd.Series(((0, 0), (99, 99)))
+        result = self.ws.find_word_with_coordinates(dataframe, diagonal)
+        self.assertIsNone(result)
+
+        diagonal = pd.Series(((3, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 5), (9, 6), (10, 7)))
+        result = self.ws.find_word_with_coordinates(dataframe, diagonal)
+        self.assertEqual(result, 'diagonal')
+
+        wrong = pd.Series(((1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8)))
+        result = self.ws.find_word_with_coordinates(dataframe, wrong)
+        self.assertNotEqual(result, 'diagonal')
+
+    def test_find_words_in_puzzle(self):
+
+        # if a search_list is not given to the class instance
+        # and a word_set is not given to the method
+        # assetion error should occur
+        copy = self.ws.word_set.copy()  # create a copy of the word_set
+        with self.assertRaises(AssertionError):
+            self.ws.word_set = None  # set the current word_set to None
+            self.ws.find_words_in_puzzle()  # check if assertion happens
+
+        self.ws.word_set = copy  # replace the word_set its old value
+
+        with self.assertRaises(AssertionError):
+            self.ws.find_words_in_puzzle("")
+
 
 
 if __name__ == '__main__':

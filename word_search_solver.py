@@ -124,6 +124,69 @@ class WordSearchPuzzle:
 
         return dataframe
 
+    def find_word_with_coordinates(self, dataframe: pd.DataFrame, coordinates: pd.Series) -> str:
+        assert isinstance(dataframe, pd.DataFrame), 'expected pandas.DataFrame for dataframe'
+        assert isinstance(coordinates, pd.Series), 'expected pandas.Series for coordinates'
+        assert all(2 == len(c) for c in coordinates), 'expected a Series of (x, y) coordinates'
+
+        # each coordinate: (column, row)
+        # should represent a coordinate on the puzzle DataFrame
+        # all the coordinates should spell out a word
+        word = None
+        try:
+            word_list = [dataframe[column][row] for column, row in coordinates]
+        except KeyError as e:
+            print("KeyError: value %s of range" % e)
+        else:
+            word = "".join(word_list)
+        finally:
+            return word
+
+    def find_words_in_puzzle(self, word_set: set = None) -> dict:
+        assert word_set or self.word_set, "needs a set of words to search for"
+
+        if word_set is not None:
+            assert type(word_set) in [set, list, tuple]
+            assert all(str == type(word) for word in set(word_set))
+        else:
+            word_set = self.word_set
+
+        combined_puzzle_df = ws.get_all_posibilities(self.puzzle_df)
+        combined_position_df = ws.get_all_posibilities(self.position_df)
+
+        # create a list of strings of all the puzzle possibilities
+        list_of_strings = combined_puzzle_df.to_string(
+            header=False, index=False, sparsify=False).replace(' ', '').split('\n')
+
+        for word in word_set:
+            found = False
+
+            for line_number, string in enumerate(list_of_strings):
+                try:  # find the word in the string and return the 1st letter
+                    start_pos = string.index(word)
+                except ValueError:  # word not found in string
+                    continue
+                # get the end pos of the list where the word should be located
+                end_pos = start_pos + len(word)
+
+                # get the coordinates in the positions DataFrame of the word in the puzzle DataFrame
+                coordinates = combined_position_df.iloc[line_number, start_pos:end_pos]
+
+                # check if the found word in the puzzle DataFrame matches the word that was searched
+                found_word = self.find_word_with_coordinates(self.puzzle_df, coordinates)
+                found = bool(found_word == word)
+                print(f"it's {found}, {word} is found")
+
+            if not found:
+                print("%s is not found" % word)
+                break
+
+        # todo return dict {<int(num of words found)>: <tuple(coordinates)>}
+        #  or set(coordinates, coordinates)  <- better
+        #  there is no need for a numbered dictionary
+
+
+
 
 if __name__ == '__main__':
     print('start\n')
@@ -133,78 +196,50 @@ if __name__ == '__main__':
     ws = WordSearchPuzzle(puzzle_file, puzzle_possibilities)
     word_set = ws.word_set
 
-    # # print the puzzle
-    # for row, row_values in ws.puzzle_df.iterrows():
-    #     for column, _ in enumerate(row_values):
-    #         print(ws.puzzle_df[column][row], end='')
-    #     print()
-
-    # # # Word Searching # # #
-
     # DataFrame[column][row]
     puzzle_df = ws.get_all_posibilities(ws.puzzle_df)
     position_df = ws.get_all_posibilities(ws.position_df)
 
-    # create a list of strings of all the puzzle possibilities
-    list_of_strings = puzzle_df.to_string(
-        header=False, index=False, sparsify=False).replace(' ', '').split('\n')
+    ws.find_words_in_puzzle()
 
-    # find the word in the list of strings
-    findings = []
-    for word in word_set:
-        # enumerate the line number starting at 0
-        for line_number, line in enumerate(list_of_strings):
-            # go to the next line of the length of the line is lower than the length of the word
-            if len(line) < len(word):
-                continue
-
-            # found -> start position in line; not found -> -1
-            start_pos = line.find(word)
-            if start_pos != -1:
-                end_pos = start_pos + len(word)
-
-                # DataFrame[column][row]
-                positions = position_df.iloc[line_number, start_pos:end_pos]
-                findings.append((word, tuple(positions)))
-                continue
     #
     # # # # Tkinter # # #
     #
-    color = cycle(['black', 'red', 'green', 'blue', 'cyan', 'yellow', 'magenta'])
-
-    height, width = ws.puzzle_df.shape
-    height, width = int(height*25+25), int(width*25+25)
-
-    root = tk.Tk()
-    root.geometry('%sx%s' % (width, height))
-    canvas = tk.Canvas(root, width=width, height=height)
-
-    for row, line in ws.puzzle_df.iterrows():
-        line = line.replace('\n', '')
-        for column, letter in enumerate(line):
-            canvas.create_text(int(column * 25 + 25),
-                               int(row * 25 + 25),
-                               text=str(letter),
-                               font='Times 20')
-
-    def with_space(event, iterator):
-        # for word, pos in findings:
-        print('space')
-        word, pos = next(iterator)    # print(word)
-        print(word, pos)
-        min_col = min(p[0] for p in pos) * 25 + 25
-        max_col = max(p[0] for p in pos) * 25 + 25
-        min_row = min(p[1] for p in pos) * 25 + 25
-        max_row = max(p[1] for p in pos) * 25 + 25
-        canvas.create_line(min_col, min_row,
-                           max_col, max_row,
-                           width=2, fill=next(color))
-        canvas.update()
-
-    canvas.pack(fill=tk.BOTH)
-    canvas.update()
-    iterator = (i for i in findings)
-    root.bind('<space>', func=lambda x: with_space(x, iterator))
-    root.mainloop()
+    # color = cycle(['black', 'red', 'green', 'blue', 'cyan', 'yellow', 'magenta'])
+    #
+    # height, width = ws.puzzle_df.shape
+    # height, width = int(height*25+25), int(width*25+25)
+    #
+    # root = tk.Tk()
+    # root.geometry('%sx%s' % (width, height))
+    # canvas = tk.Canvas(root, width=width, height=height)
+    #
+    # for row, line in ws.puzzle_df.iterrows():
+    #     line = line.replace('\n', '')
+    #     for column, letter in enumerate(line):
+    #         canvas.create_text(int(column * 25 + 25),
+    #                            int(row * 25 + 25),
+    #                            text=str(letter),
+    #                            font='Times 20')
+    #
+    # def with_space(event, iterator):
+    #     # for word, pos in findings:
+    #     print('space')
+    #     word, pos = next(iterator)    # print(word)
+    #     print(word, pos)
+    #     min_col = min(p[0] for p in pos) * 25 + 25
+    #     max_col = max(p[0] for p in pos) * 25 + 25
+    #     min_row = min(p[1] for p in pos) * 25 + 25
+    #     max_row = max(p[1] for p in pos) * 25 + 25
+    #     canvas.create_line(min_col, min_row,
+    #                        max_col, max_row,
+    #                        width=2, fill=next(color))
+    #     canvas.update()
+    #
+    # canvas.pack(fill=tk.BOTH)
+    # canvas.update()
+    # iterator = (i for i in findings)
+    # root.bind('<space>', func=lambda x: with_space(x, iterator))
+    # root.mainloop()
 
 
