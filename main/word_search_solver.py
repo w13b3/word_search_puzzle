@@ -77,9 +77,10 @@ class WordSearchPuzzle:
                 line = line if ',' not in line else line.split(',')
                 line = line if ';' not in line else line.split(';')
                 if isinstance(line, list):
-                    word_set.update(set(line))
+                    line_list = [word.strip() for word in line]
+                    word_set.update(set(line_list))
                     continue
-                word_set.add(line)
+                word_set.add(line.strip())
         return word_set  # -> set
 
     def get_turned_dataframe(self, dataframe, times=1) -> pd.DataFrame:
@@ -125,9 +126,11 @@ class WordSearchPuzzle:
         return dataframe
 
     def find_word_with_coordinates(self, dataframe: pd.DataFrame, coordinates: pd.Series) -> str:
-        assert isinstance(dataframe, pd.DataFrame), 'expected pandas.DataFrame for dataframe'
-        assert isinstance(coordinates, pd.Series), 'expected pandas.Series for coordinates'
-        assert all(2 == len(c) for c in coordinates), 'expected a Series of (x, y) coordinates'
+        if isinstance(coordinates, tuple):
+            coordinates = pd.Series(coordinates)
+        assert isinstance(dataframe, pd.DataFrame)
+        assert isinstance(coordinates, pd.Series)
+        assert all(2 == len(c) for c in coordinates)
 
         # each coordinate: (column, row)
         # should represent a coordinate on the puzzle DataFrame
@@ -136,14 +139,14 @@ class WordSearchPuzzle:
         try:
             word_list = [dataframe[column][row] for column, row in coordinates]
         except KeyError as e:
-            print("KeyError: value %s of range" % e)
+            print('KeyError: value %s of range' % e)
         else:
-            word = "".join(word_list)
+            word = ''.join(word_list)
         finally:
             return word
 
-    def find_words_in_puzzle(self, word_set: set = None) -> dict:
-        assert word_set or self.word_set, "needs a set of words to search for"
+    def find_words_in_puzzle(self, word_set: set = None) -> set:
+        assert word_set or self.word_set, 'needs a set of words to search for'
 
         if word_set is not None:
             assert type(word_set) in [set, list, tuple]
@@ -158,6 +161,9 @@ class WordSearchPuzzle:
         list_of_strings = combined_puzzle_df.to_string(
             header=False, index=False, sparsify=False).replace(' ', '').split('\n')
 
+        print(list_of_strings)
+
+        found_word_positions_set = set()
         for word in word_set:
             found = False
 
@@ -175,71 +181,64 @@ class WordSearchPuzzle:
                 # check if the found word in the puzzle DataFrame matches the word that was searched
                 found_word = self.find_word_with_coordinates(self.puzzle_df, coordinates)
                 found = bool(found_word == word)
-                print(f"it's {found}, {word} is found")
+
+                if found:  # if the word matches, add the tuple of coordinates to the set
+                    found_word_positions_set.add(tuple(coordinates))
+
+                # print(f"it's {found}, {word} is found")
 
             if not found:
-                print("%s is not found" % word)
-                break
+                print('%s is not found' % word)
 
-        # todo return dict {<int(num of words found)>: <tuple(coordinates)>}
-        #  or set(coordinates, coordinates)  <- better
-        #  there is no need for a numbered dictionary
-
-
+        return found_word_positions_set  # -> set
 
 
 if __name__ == '__main__':
     print('start\n')
-    puzzle_file = 'woordzoeker.txt'
-    puzzle_possibilities = 'woordenlijst.txt'
-
+    puzzle_file = r'..\puzzles\apple_word_search_puzzle.txt'
+    puzzle_possibilities = r'..\puzzles\apple_word_search_set.txt'
     ws = WordSearchPuzzle(puzzle_file, puzzle_possibilities)
     word_set = ws.word_set
-
     # DataFrame[column][row]
     puzzle_df = ws.get_all_posibilities(ws.puzzle_df)
     position_df = ws.get_all_posibilities(ws.position_df)
 
-    ws.find_words_in_puzzle()
+    coordinate_set = ws.find_words_in_puzzle()
 
-    #
-    # # # # Tkinter # # #
-    #
-    # color = cycle(['black', 'red', 'green', 'blue', 'cyan', 'yellow', 'magenta'])
-    #
-    # height, width = ws.puzzle_df.shape
-    # height, width = int(height*25+25), int(width*25+25)
-    #
-    # root = tk.Tk()
-    # root.geometry('%sx%s' % (width, height))
-    # canvas = tk.Canvas(root, width=width, height=height)
-    #
-    # for row, line in ws.puzzle_df.iterrows():
-    #     line = line.replace('\n', '')
-    #     for column, letter in enumerate(line):
-    #         canvas.create_text(int(column * 25 + 25),
-    #                            int(row * 25 + 25),
-    #                            text=str(letter),
-    #                            font='Times 20')
-    #
-    # def with_space(event, iterator):
-    #     # for word, pos in findings:
-    #     print('space')
-    #     word, pos = next(iterator)    # print(word)
-    #     print(word, pos)
-    #     min_col = min(p[0] for p in pos) * 25 + 25
-    #     max_col = max(p[0] for p in pos) * 25 + 25
-    #     min_row = min(p[1] for p in pos) * 25 + 25
-    #     max_row = max(p[1] for p in pos) * 25 + 25
-    #     canvas.create_line(min_col, min_row,
-    #                        max_col, max_row,
-    #                        width=2, fill=next(color))
-    #     canvas.update()
-    #
-    # canvas.pack(fill=tk.BOTH)
-    # canvas.update()
-    # iterator = (i for i in findings)
-    # root.bind('<space>', func=lambda x: with_space(x, iterator))
-    # root.mainloop()
+    # # # Tkinter # # #
 
+    color_cycle = cycle(['black', 'red', 'green', 'blue', 'cyan', 'yellow', 'magenta'])
 
+    height, width = ws.puzzle_df.shape
+    height, width = int(height*25+25), int(width*25+25)
+
+    root = tk.Tk()
+    root.geometry('%sx%s' % (width, height))
+    canvas = tk.Canvas(root, width=width, height=height)
+
+    for row, line in ws.puzzle_df.iterrows():
+        line = line.replace('\n', '')
+        for column, letter in enumerate(line):
+            canvas.create_text(int(column * 25 + 25),
+                               int(row * 25 + 25),
+                               text=str(letter),
+                               font='Times 20')
+
+    canvas.pack(fill=tk.BOTH)
+    canvas.update()
+    iterator = (i for i in coordinate_set)
+    for coordinates in coordinate_set:
+        prev_column, prev_row = None, None
+        color = next(color_cycle)
+        for column, row in coordinates:
+            column = column * 25 + 25
+            row = row * 25 + 25
+            if prev_column is None and prev_row is None:
+                prev_column, prev_row = column, row
+                continue
+            else:
+                canvas.create_line(prev_column, prev_row, column, row,
+                                   width=2, fill=color)
+                column1, row1 = column, row
+
+    root.mainloop()

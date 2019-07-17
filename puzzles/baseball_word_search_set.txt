@@ -1,0 +1,13 @@
+base                inning
+batter              mitt
+bleachers           outfield
+bullpen             peanuts
+bunt                pitcher
+cap                 popcorn
+catcher             scoreboard
+crowd               shortstop
+diamond             single
+dugout              stadium
+fly                 strike
+foul       homerun  team
+grandstand hotdog

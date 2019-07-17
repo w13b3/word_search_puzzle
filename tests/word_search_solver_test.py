@@ -1,62 +1,22 @@
 #!/usr/bin/env python3
 
-import os
 import unittest
-from tempfile import NamedTemporaryFile
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from word_search_solver import WordSearchPuzzle
-
-word_search_list = [
-    'abcdefghijklm;nopqrstuvwxyz', '\n', 'eazy,welcome,aan', 'diagonal vertical horizontal',
-    'golfpijp', ' keuken', 'nifty ', ' level ', 'program', 'ook', 'oma', 'foto', 'python',
-    'hot', 'oogbal', 'yahoo', 'netjes', 'hoog', 'koen', 'nothing', 'debug', 'vet',
-    'mensen', 'bier', 'neef', 'set', 'weg', 'google', 'zero']
-
-# triple quote multi lines create a larger size when written to a file in Windows OS
-puzzle_file = ('abcdefghijklm+\n'
-               'qhorizontalaan\n'
-               'bierxazghrycko\n'
-               'wegiocgolfpijp\n'
-               'jgoogleotestmq\n'
-               'programtnwgror\n'
-               'yahooiiomayews\n'
-               'tqazwsxfpolvet\n'
-               'hkedclekuekcxu\n'
-               'oogbaledvlelev\n'
-               'netjesbehtjoew\n'
-               'dnesnemafpaczx\n'
-               'lkjemnbuonifty\n'
-               '-nothingfeorez')
+from main.word_search_solver import WordSearchPuzzle
 
 
 class WordSearchPuzzleTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # create a temporary file to test against
-        with NamedTemporaryFile(mode='w', delete=False) as temp_word_puzzle:
-            temp_word_puzzle.writelines(puzzle_file)
-            cls.word_puzzle = temp_word_puzzle.name
-
-        # create a temporary file to test against
-        with NamedTemporaryFile(mode='w', delete=False) as temp_word_search_list:
-            for line in word_search_list:
-                temp_word_search_list.write(line if line.endswith('\n') else line + '\n')
-            cls.word_search_list = temp_word_search_list.name
+        cls.word_search_puzzle = r"puzzles/test_word_search_puzzle.txt"
+        cls.word_search_set = r"puzzles/test_word_search_set.txt"
 
         # initiate the class for the whole test
-        cls.ws = WordSearchPuzzle(cls.word_puzzle, cls.word_search_list)
-
-    @classmethod
-    def tearDownClass(cls):
-        # try to remove the files created in the setUpClass
-        try: os.unlink(cls.word_puzzle)
-        except: pass
-        try: os.unlink(cls.word_search_list)
-        except: pass
+        cls.ws = WordSearchPuzzle(cls.word_search_puzzle, cls.word_search_set)
 
     def test_get_puzzle_size(self):
 
@@ -65,7 +25,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
             self.ws._get_puzzle_size('/not/a/path.txt')
 
         # Return a tuple
-        result = self.ws._get_puzzle_size(self.word_puzzle)  # -> (14, 14)
+        result = self.ws._get_puzzle_size(self.word_search_puzzle)  # -> (14, 14)
         self.assertIs(type(result), tuple)
 
         width, height = result
@@ -79,7 +39,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
             self.ws._create_empty_dataframe('/not/a/path.txt')
 
         # create a DataFrame
-        result = self.ws._create_empty_dataframe(self.word_puzzle)
+        result = self.ws._create_empty_dataframe(self.word_search_puzzle)
         self.assertIs(type(result), pd.DataFrame)
 
         # DataFrame should have the size of the puzzle
@@ -99,7 +59,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
             self.ws._get_puzzle_size('/not/a/path.txt')
 
         # create a DataFrame
-        result = self.ws._create_puzzle_dataframe(self.word_puzzle)
+        result = self.ws._create_puzzle_dataframe(self.word_search_puzzle)
         self.assertIs(type(result), pd.DataFrame)
 
         # DataFrame should have the size of the puzzle
@@ -108,7 +68,10 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertEqual(height, 14)
 
         # comprehension list creates 2d-list of the puzzle file
-        line_2d_list = [[letter for letter in line] for line in puzzle_file.split('\n') if line]
+        with open(self.word_search_puzzle) as file:
+            puzzle_file = file.readline()
+            line_2d_list = [[letter for letter in line] for line in puzzle_file.split('\n') if line]
+
         for line_list, (index, row) in zip(line_2d_list, result.iterrows()):
             # line and row should be the same
             self.assertEqual(line_list, row.tolist())
@@ -132,7 +95,9 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertEqual(height, 14)
 
         # comprehension list creates 2d-list of the puzzle file
-        pos_2d_list = [[(x, y) for x, _ in enumerate(_)] for y, _ in enumerate(puzzle_file.split('\n')) if _]
+        with open(self.word_search_puzzle) as file:
+            puzzle_file = file.readline()
+            pos_2d_list = [[(x, y) for x, _ in enumerate(_)] for y, _ in enumerate(puzzle_file.split('\n')) if _]
 
         for pos_list, (index, row) in zip(pos_2d_list, result.iterrows()):
             # pos_list and row should be the same
@@ -149,15 +114,18 @@ class WordSearchPuzzleTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.ws.create_word_set('/not/a/path.txt')
 
+        with open(self.word_search_set) as file:
+            lenght_file = len(file.readlines())
+
         # create a set
-        result = self.ws.create_word_set(self.word_search_list)
+        result = self.ws.create_word_set(self.word_search_set)
         self.assertIs(type(result), set)
 
         # 33 words are given in the word_search_list
         # len(word_search_list) == 28
         # method should parse the different data correctly
-        self.assertGreater(len(result), len(word_search_list))
-        self.assertEqual(33, len(result))
+        self.assertGreater(len(result), lenght_file)
+        self.assertEqual(35, len(result))
 
     def test_get_turned_DataFrame(self):
 
@@ -380,9 +348,11 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         self.ws.word_set = copy  # replace the word_set its old value
 
-        with self.assertRaises(AssertionError):
-            self.ws.find_words_in_puzzle("")
-
+        # method only takes: set, list or tuple
+        self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, str())
+        self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, int())
+        self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, float())
+        self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, dict())
 
 
 if __name__ == '__main__':
