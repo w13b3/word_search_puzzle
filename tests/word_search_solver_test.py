@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+from unittest.mock import patch, call
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
@@ -112,13 +113,13 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid file path is given
         with self.assertRaises(AssertionError):
-            self.ws.create_word_set('/not/a/path.txt')
+            self.ws._create_word_set('/not/a/path.txt')
 
         with open(self.word_search_set) as file:
             lenght_file = len(file.readlines())
 
         # create a set
-        result = self.ws.create_word_set(self.word_search_set)
+        result = self.ws._create_word_set(self.word_search_set)
         self.assertIs(type(result), set)
 
         # 33 words are given in the word_search_list
@@ -236,10 +237,10 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # should get an error when an invalid type is given to dataframe
         with self.assertRaises(AssertionError):
-            self.ws.get_all_posibilities(dataframe='dataframe')
+            self.ws.get_all_possibilities(dataframe='dataframe')
 
         dataframe = self.ws.puzzle_df.copy()
-        result = self.ws.get_all_posibilities(dataframe=dataframe)
+        result = self.ws.get_all_possibilities(dataframe=dataframe)
 
         # should return a pandas.DataFrame
         self.assertIs(type(result), pd.DataFrame)
@@ -267,8 +268,8 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertEqual(pos_height, data_height)  # 14 == 14
         self.assertEqual(pos_width, data_width)  # 14 == 14
 
-        combined_data = self.ws.get_all_posibilities(dataframe)
-        combined_positions = self.ws.get_all_posibilities(positionframe)
+        combined_data = self.ws.get_all_possibilities(dataframe)
+        combined_positions = self.ws.get_all_possibilities(positionframe)
 
         data_height, data_width = combined_data.shape
         pos_height, pos_width = combined_positions.shape
@@ -324,9 +325,11 @@ class WordSearchPuzzleTest(unittest.TestCase):
             self.ws.find_word_with_coordinates(dataframe=pd.DataFrame(), coordinates=wrond_data)
 
         # should return None if the given value is out of range of the puzzle DataFrame
-        diagonal = pd.Series(((0, 0), (99, 99)))
-        result = self.ws.find_word_with_coordinates(dataframe, diagonal)
-        self.assertIsNone(result)
+        with unittest.mock.patch('builtins.print') as mocked_print:
+            diagonal = pd.Series(((0, 0), (99, 99)))
+            result = self.ws.find_word_with_coordinates(dataframe, diagonal)
+            self.assertFalse(result)
+            self.assertIn(call('KeyError: value 99 of range'), mocked_print.mock_calls)
 
         diagonal = pd.Series(((3, 0), (4, 1), (5, 2), (6, 3), (7, 4), (8, 5), (9, 6), (10, 7)))
         result = self.ws.find_word_with_coordinates(dataframe, diagonal)
@@ -353,6 +356,24 @@ class WordSearchPuzzleTest(unittest.TestCase):
         self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, int())
         self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, float())
         self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, dict())
+
+        # only strings should be in the given set
+        with self.assertRaises(AssertionError):
+            wrong_set = {"str", 1, 1.2}
+            self.ws.find_words_in_puzzle(wrong_set)
+
+        # given minimum length should be either a tuple or an int
+        self.assertRaises(AssertionError, self.ws.find_words_in_puzzle, set(), "str")
+
+        # test if words are found
+        # and the returned set contains tuples
+        # and if 'not_found' is not found
+        with unittest.mock.patch('builtins.print') as mocked_print:
+            result = self.ws.find_words_in_puzzle()
+            self.assertIs(type(result), set)
+            self.assertGreater(len(result), 0)
+            self.assertIs(type(result.pop()), tuple)
+            self.assertIn(call('not_found is not found'), mocked_print.mock_calls)
 
 
 if __name__ == '__main__':
