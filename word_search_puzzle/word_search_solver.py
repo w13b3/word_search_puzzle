@@ -307,6 +307,28 @@ class WordSearchPuzzle:
         self.solution_coordinates = found_word_positions_set
         return found_word_positions_set  # -> set
 
+    def get_left_over_coordinates(self) -> pd.Series:
+        """
+
+        :return str: letters that are left over if the puzzle's solution is found.
+        """
+        if self.solution_coordinates is None:
+            self.find_words_in_puzzle()
+
+        position_df = self.position_df.copy()  # save the original
+        for coordinates in self.solution_coordinates:
+            for column, row in coordinates:
+                position_df[column][row] = ''
+
+        left_over = pd.Series(pos for _, row in position_df.iterrows() for pos in row if pos)
+        return left_over
+
+    def get_left_over_letters(self) -> str:
+        left_over = self.get_left_over_coordinates()
+        letters = self.find_word_with_coordinates(self.puzzle_df, left_over)
+        return letters.replace(' ', '')
+
+
     def visualize_solution(self):
         """
         Visualize the solution of the found words in the puzzle
@@ -329,6 +351,7 @@ class WordSearchPuzzle:
         height, width = int(height * 25 + 25), int(width * 25 + 25)
 
         root = tk.Tk()
+        root.title("Solution")
         root.geometry('%sx%s' % (width, height))
         canvas = tk.Canvas(root, width=width, height=height)
 
@@ -355,17 +378,19 @@ class WordSearchPuzzle:
 
         root.mainloop()
 
+
 if __name__ == '__main__':
     print('start\n')
 
-    puzzle_file = r'../puzzles/apple_word_search_puzzle.txt'
-    puzzle_possibilities = r'../puzzles/apple_word_search_set.txt'
+    # puzzle_file = r'../puzzles/apple_word_search_puzzle.txt'
+    # puzzle_possibilities = r'../puzzles/apple_word_search_set.txt'
 
-    # puzzle_file = r'../puzzles/baseball_word_search_puzzle.txt'
-    # puzzle_possibilities = r'../puzzles/baseball_word_search_set.txt'
+    puzzle_file = r'../puzzles/baseball_word_search_puzzle.txt'
+    puzzle_possibilities = r'../puzzles/baseball_word_search_set.txt'
 
     # puzzle_file = r'../puzzles/housing_word_search_puzzle.txt'
     # puzzle_possibilities = r'../puzzles/housing_word_search_set.txt'
 
     ws = WordSearchPuzzle(puzzle_file, puzzle_possibilities)
-    ws.visualize_solution()
+    # ws.visualize_solution()
+    print(ws.get_left_over_letters())

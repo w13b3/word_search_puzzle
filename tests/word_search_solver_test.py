@@ -6,7 +6,7 @@ from unittest.mock import patch, call
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from main.word_search_solver import WordSearchPuzzle
+from word_search_puzzle.word_search_solver import WordSearchPuzzle
 
 
 class WordSearchPuzzleTest(unittest.TestCase):
