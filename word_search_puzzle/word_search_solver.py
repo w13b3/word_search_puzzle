@@ -39,6 +39,11 @@ class WordSearchPuzzle:
              ((0, 1), (1, 1)  (2, 1)),
              ((0, 1), (1, 1)  (1, 2))}
 
+        or a string of unused letters can be returned
+        example:
+
+            test
+
         to show the solution visualize_solution can be called
         this requires tkinter to work
     """
@@ -273,7 +278,7 @@ class WordSearchPuzzle:
 
         # make a list of strings
         # a list that keeps the empty spaces that might be in the DataFrame
-        list_of_strings = [''.join(row.to_list()) for _, row in combined_puzzle_df.iterrows()]
+        list_of_strings = [''.join(row.tolist()) for _, row in combined_puzzle_df.iterrows()]
 
         found_word_positions_set = set()
         for word in word_set:
@@ -309,8 +314,9 @@ class WordSearchPuzzle:
 
     def get_left_over_coordinates(self) -> pd.Series:
         """
+        This returns the Cartesian positions that are not used to solve the puzzle.
 
-        :return str: letters that are left over if the puzzle's solution is found.
+        :return pandas.Series: series of Cartesian positions
         """
         if self.solution_coordinates is None:
             self.find_words_in_puzzle()
@@ -321,13 +327,17 @@ class WordSearchPuzzle:
                 position_df[column][row] = ''
 
         left_over = pd.Series(pos for _, row in position_df.iterrows() for pos in row if pos)
-        return left_over
+        return left_over  # -> pd.Series
 
     def get_left_over_letters(self) -> str:
+        """
+        This returns the letters left over when the puzzle is solved.
+
+        :return str:  A string of unused letters
+        """
         left_over = self.get_left_over_coordinates()
         letters = self.find_word_with_coordinates(self.puzzle_df, left_over)
-        return letters.replace(' ', '')
-
+        return letters.replace(' ', '')  # -> str
 
     def visualize_solution(self):
         """
@@ -337,18 +347,27 @@ class WordSearchPuzzle:
         """
         assert self.solution_coordinates is not None
 
-        from itertools import cycle
         try:
             import tkinter as tk
+            from itertools import cycle
         except ImportError:
             # Linux: sudo apt install python-tk
             print("Tkinter is needed for visualization")
             exit(1)
 
+        def close_window(event):
+            """ close the window """
+            root.destroy()
+
+
+        def sizeup(input: int) -> int:
+            """ convert numbers to bigger numbers to space out elements in the window """
+            return int(input) * 25 + 25
+
         color_cycle = cycle(['black', 'red', 'green', 'blue', 'cyan', 'yellow', 'magenta'])
 
         height, width = self.puzzle_df.shape
-        height, width = int(height * 25 + 25), int(width * 25 + 25)
+        height, width = sizeup(height), sizeup(width)
 
         root = tk.Tk()
         root.title("Solution")
@@ -358,7 +377,7 @@ class WordSearchPuzzle:
         for row, line in self.puzzle_df.iterrows():
             line = line.replace('\n', '')
             for column, letter in enumerate(line):
-                canvas.create_text(int(column * 25 + 25), int(row * 25 + 25), text=str(letter), font='Times 20')
+                canvas.create_text(sizeup(column), sizeup(row), text=str(letter), font='Times 20')
 
         canvas.pack(fill=tk.BOTH)
         canvas.update()
@@ -367,8 +386,8 @@ class WordSearchPuzzle:
             prev_column, prev_row = None, None
             color = next(color_cycle)
             for column, row in coordinates:
-                column = column * 25 + 25
-                row = row * 25 + 25
+                column = sizeup(column)
+                row = sizeup(row)
                 if prev_column is None and prev_row is None:
                     prev_column, prev_row = column, row
                     continue
@@ -376,6 +395,7 @@ class WordSearchPuzzle:
                     canvas.create_line(prev_column, prev_row, column, row, width=5, fill=color)
                     prev_column, prev_row = column, row
 
+        root.bind("<Escape>", func=lambda x: close_window(x))
         root.mainloop()
 
 
@@ -385,12 +405,12 @@ if __name__ == '__main__':
     # puzzle_file = r'../puzzles/apple_word_search_puzzle.txt'
     # puzzle_possibilities = r'../puzzles/apple_word_search_set.txt'
 
-    puzzle_file = r'../puzzles/baseball_word_search_puzzle.txt'
-    puzzle_possibilities = r'../puzzles/baseball_word_search_set.txt'
+    # puzzle_file = r'../puzzles/baseball_word_search_puzzle.txt'
+    # puzzle_possibilities = r'../puzzles/baseball_word_search_set.txt'
 
-    # puzzle_file = r'../puzzles/housing_word_search_puzzle.txt'
-    # puzzle_possibilities = r'../puzzles/housing_word_search_set.txt'
+    puzzle_file = r'../puzzles/housing_word_search_puzzle.txt'
+    puzzle_possibilities = r'../puzzles/housing_word_search_set.txt'
 
     ws = WordSearchPuzzle(puzzle_file, puzzle_possibilities)
-    # ws.visualize_solution()
     print(ws.get_left_over_letters())
+    ws.visualize_solution()

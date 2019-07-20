@@ -27,7 +27,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # Return a tuple
         result = self.ws._get_puzzle_size(self.word_search_puzzle)  # -> (14, 14)
-        self.assertIs(type(result), tuple)
+        self.assertTrue(isinstance(result, tuple))
 
         width, height = result
         self.assertEqual(width, 14)
@@ -41,7 +41,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # create a DataFrame
         result = self.ws._create_empty_dataframe(self.word_search_puzzle)
-        self.assertIs(type(result), pd.DataFrame)
+        self.assertTrue(isinstance(result, pd.DataFrame))
 
         # DataFrame should have the size of the puzzle
         width, height = result.shape[:2]
@@ -61,7 +61,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # create a DataFrame
         result = self.ws._create_puzzle_dataframe(self.word_search_puzzle)
-        self.assertIs(type(result), pd.DataFrame)
+        self.assertTrue(isinstance(result, pd.DataFrame))
 
         # DataFrame should have the size of the puzzle
         width, height = result.shape[:2]
@@ -88,7 +88,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # create a DataFrame
         result = self.ws._create_position_dataframe(self.ws.puzzle_df)
-        self.assertIs(type(result), pd.DataFrame)
+        self.assertTrue(isinstance(result, pd.DataFrame))
 
         # DataFrame should have the size of the puzzle
         width, height = result.shape[:2]
@@ -105,7 +105,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
             self.assertEqual(pos_list, row.tolist())
             for list_pos, row_pos in zip(pos_list, row):
                 # checking if the position on the row is a tuple
-                self.assertIs(type(row_pos), tuple)
+                self.assertTrue(isinstance(row_pos, tuple))
                 # checking if the position on the row is indeed made up of an (x, y) formation
                 self.assertEqual(list_pos, row_pos)
 
@@ -120,7 +120,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
 
         # create a set
         result = self.ws._create_word_set(self.word_search_set)
-        self.assertIs(type(result), set)
+        self.assertTrue(isinstance(result, set))
 
         # 33 words are given in the word_search_list
         # len(word_search_list) == 28
@@ -152,11 +152,11 @@ class WordSearchPuzzleTest(unittest.TestCase):
         dataframe_360deg = self.ws.get_turned_dataframe(dataframe, times=4)
 
         # should return a pandas.DataFrame
-        self.assertIs(type(dataframe_0deg), pd.DataFrame)
-        self.assertIs(type(dataframe_90deg), pd.DataFrame)
-        self.assertIs(type(dataframe_180deg), pd.DataFrame)
-        self.assertIs(type(dataframe_270deg), pd.DataFrame)
-        self.assertIs(type(dataframe_360deg), pd.DataFrame)
+        self.assertTrue(isinstance(dataframe_0deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_90deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_180deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_270deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_360deg, pd.DataFrame))
 
         # test the data
         self.assertIsNone(assert_frame_equal(dataframe, dataframe_0deg))  # times=0
@@ -204,10 +204,10 @@ class WordSearchPuzzleTest(unittest.TestCase):
         dataframe_225deg = self.ws.get_diagonal_dataframe(dataframe_270deg)
 
         # should return a pandas.DataFrame
-        self.assertIs(type(dataframe_315deg), pd.DataFrame)
-        self.assertIs(type(dataframe_45deg), pd.DataFrame)
-        self.assertIs(type(dataframe_135deg), pd.DataFrame)
-        self.assertIs(type(dataframe_225deg), pd.DataFrame)
+        self.assertTrue(isinstance(dataframe_315deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_45deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_135deg, pd.DataFrame))
+        self.assertTrue(isinstance(dataframe_225deg, pd.DataFrame))
 
         # face 0deg, slice at 315deg (bottom left to top right)
         self.assertEqual(bottom_left, dataframe_315deg[0][0])     # -> '-'
@@ -243,7 +243,7 @@ class WordSearchPuzzleTest(unittest.TestCase):
         result = self.ws.get_all_possibilities(dataframe=dataframe)
 
         # should return a pandas.DataFrame
-        self.assertIs(type(result), pd.DataFrame)
+        self.assertTrue(isinstance(result, pd.DataFrame))
 
         height, width = result.shape
 
@@ -289,16 +289,16 @@ class WordSearchPuzzleTest(unittest.TestCase):
             for column, _ in enumerate(row_values):       # column: int
 
                 letter = combined_data[column][row]  # letter of combined
-                self.assertIs(type(letter), str)
+                self.assertTrue(isinstance(letter, str))
                 if len(letter.strip()) == 0:
                     continue
 
                 position = combined_positions[column][row]  # position of combined
-                self.assertIs(type(position), tuple)
+                self.assertTrue(isinstance(position, tuple))
                 pos_x, pos_y = position
 
                 puzzle_letter = self.ws.puzzle_df[pos_x][pos_y]  # letter of position
-                self.assertIs(type(puzzle_letter), str)
+                self.assertTrue(isinstance(puzzle_letter, str))
                 self.assertEqual(letter, puzzle_letter)
                 # print(f'{letter} == {puzzle_letter} puzzle coordinates: {position}')
 
@@ -370,11 +370,29 @@ class WordSearchPuzzleTest(unittest.TestCase):
         # and if 'not_found' is not found
         with unittest.mock.patch('builtins.print') as mocked_print:
             result = self.ws.find_words_in_puzzle()
-            self.assertIs(type(result), set)
+            self.assertTrue(isinstance(result, set))
             self.assertGreater(len(result), 0)
-            self.assertIs(type(result.pop()), tuple)
+            self.assertTrue(isinstance(result.pop(), tuple))
             self.assertIn(call('not_found is not found'), mocked_print.mock_calls)
 
+    def test_get_left_over_coordinates(self):
+
+        # set the solution_coordinates to None
+        # get_left_over_coordinates should fill it again.
+        self.ws.solution_coordinates = None
+        result = self.ws.get_left_over_coordinates()
+        self.assertIsNotNone(self.ws.solution_coordinates)
+
+        # check the result.
+        self.assertTrue(isinstance(result, pd.Series))
+        self.assertLessEqual(len(self.ws.solution_coordinates), len(result))
+
+
+    def test_get_left_over_letters(self):
+
+        # the result of get_left_over_letters is of type string
+        result = self.ws.get_left_over_letters()
+        self.assertTrue(isinstance(result, str))
 
 if __name__ == '__main__':
     unittest.main()
