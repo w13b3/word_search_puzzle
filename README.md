@@ -1,4 +1,4 @@
-# word-search-puzzle
+# word_search_puzzle
 solver for [word search](https://en.wikipedia.org/wiki/Word_search) puzzles
 
 ## In action
